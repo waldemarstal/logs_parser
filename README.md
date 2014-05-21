@@ -25,5 +25,5 @@ python setup.py install
 
 Now you can run my script using command:
 ```bash
-logs_parser file_name
+logs_parser file_name TLD
 ```

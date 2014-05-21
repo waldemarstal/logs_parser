@@ -50,7 +50,6 @@ class Parser():
             raise ParseError(e)
 
     def _close_file(self):
-        print 'Close file!'
         self.fd.close()
 
     def run_parser(self):

@@ -42,15 +42,13 @@ class Parser():
 
     def _open_file(self):
         try:
+            self.res = open('result.txt', 'w')
             if self.file_name.endswith('.gz'):
                 self.fd = GzipFile(self.file_name, 'r')
             else:
                 self.fd = open(self.file_name, 'r')
         except Exception as e:
             raise ParseError(e)
-
-    def _close_file(self):
-        self.fd.close()
 
     def run_parser(self):
         self._open_file()
@@ -64,8 +62,9 @@ class Parser():
             if not self.is_selected_tld(parse_url):
                 continue
             self._create_probability_tree(parse_url)
-        self._close_file()
+        self.fd.close()
         self.calculate_probability()
+        self.res.close()
         return
 
     def _create_probability_tree(self, parse_url):
@@ -109,11 +108,15 @@ class Parser():
                 path_list = self.create_path_list(path)
                 for i in range(1, len(path_list) + 1):
                     count = self.find_count_of_member(path_list[:i], k)
-                    print '/%s - %s %f' % (
+                    result = '/%s - %s %f' % (
                         '/'.join(path_list[:(i - 1)]),
                         path_list[i - 1],
                         round(count / float(divisor), 3)
                     )
+                    print result
+                    self.res.write(result)
+                    self.res.write('\n')
+
 
     def find_count_of_member(self, param, bdom):
         count = 0

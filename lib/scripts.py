@@ -3,7 +3,7 @@ import sys
 from optparse import OptionParser
 parser = OptionParser()
 (options, args) = parser.parse_args()
-from parser import run_parser
+from parser import Parser
 
 
 def main():
@@ -12,7 +12,8 @@ def main():
         sys.exit(0)
     file_name = args[0]
     try:
-        run_parser(file_name)
+        logs_parser = Parser(file_name)
+        logs_parser.run_parser()
     except Exception as e:
         print '%s!' % e
 

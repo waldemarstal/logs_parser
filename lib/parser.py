@@ -8,51 +8,69 @@ class ParseError(Exception):
     pass
 
 
-def url_from_regexp(regexp):
-    if regexp:
-        return regexp[0][0]
-    return ''
+class Parser():
 
+    def __init__(self, file_name):
+        self.file_name = file_name
+        self.probability_tree = {'pl': {}}
+        self.fd = ''
+        self.url_in_text = re.compile(ur'(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'".,<>?\xab\xbb\u201c\u201d\u2018\u2019]))')
 
-def is_selected_tld(parse):
-    domain = parse.netloc.split('.')[-1]
-    if domain == 'pl':
-        return True
-    return False
+    @staticmethod
+    def pop_qs(url):
+        parse = urlparse(url)
+        parse = parse.geturl().split('?')[0]
+        return parse
 
+    @staticmethod
+    def is_selected_tld(parse):
+        parse = urlparse(parse)
+        domain = parse.netloc.split('.')[-1]
+        if domain == 'pl':
+            return True
+        return False
 
-def run_parser(file_name):
-    probability_tree = {}
-    probability_tree['pl'] = {}
-    # res = open('result.txt', 'w')
-    try:
-        if file_name.endswith('.gz'):
-            fd = GzipFile(file_name, 'r')
-        else:
-            fd = open(file_name, 'r')
-    except Exception as e:
-        raise ParseError(e)
-    else:
-        files = fd.readlines()
+    def _regexp(self, line):
+        regexp = self.url_in_text.findall(line)
+        return regexp
+
+    def get_url(self, line):
+        regexp = self._regexp(line)
+        if regexp:
+            return regexp[0][0]
+        return ''
+
+    def _open_file(self):
+        try:
+            if self.file_name.endswith('.gz'):
+                self.fd = GzipFile(self.file_name, 'r')
+            else:
+                self.fd = open(self.file_name, 'r')
+        except Exception as e:
+            raise ParseError(e)
+
+    def _close_file(self):
+        print 'Close file!'
+        self.fd.close()
+
+    def run_parser(self):
+        self._open_file()
+        files = self.fd.readlines()
         for line in files:
             line = line.replace('(', '')
-            GRUBER_URLINTEXT_PAT = re.compile(ur'(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'".,<>?\xab\xbb\u201c\u201d\u2018\u2019]))')
-            regexp = GRUBER_URLINTEXT_PAT.findall(line)
-            url = url_from_regexp(regexp)
+            url = self.get_url(line)
             if not url:
                 continue
-            parseurl = urlparse(url)
-            url = parseurl.geturl().split('?')[0]
-            # res.write(url)
-            # res.write('\n')
-            if not is_selected_tld(parseurl):
+            parse_url = self.pop_qs(url)
+            if not self.is_selected_tld(parse_url):
                 continue
-            before_domain = parseurl.netloc.split('.')[-2]
-            if not probability_tree['pl'].get(before_domain):
-                probability_tree['pl'][before_domain] = []
-            probability_tree['pl'][before_domain].append(url)
-        import ipdb;ipdb.set_trace()
-        # res.close()
-        print 'DONE!'
-        fd.close()
+            self._create_probability_tree(parse_url)
+        self._close_file()
         return
+
+    def _create_probability_tree(self, parse_url):
+        parse_url = urlparse(parse_url)
+        before_domain = parse_url.netloc.split('.')[-2]
+        if not self.probability_tree['pl'].get(before_domain):
+            self.probability_tree['pl'][before_domain] = []
+        self.probability_tree['pl'][before_domain].append(parse_url)

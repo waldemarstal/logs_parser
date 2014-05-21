@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 import re
 from gzip import GzipFile
-# from urlparse import urlparse
+from urlparse import urlparse
 
 
 class ParseError(Exception):
@@ -14,10 +14,17 @@ def url_from_regexp(regexp):
     return ''
 
 
+def is_selected_tld(parse):
+    domain = parse.netloc.split('.')[-1]
+    if domain == 'pl':
+        return True
+    return False
+
 
 def run_parser(file_name):
-    url_list = []
-    res = open('result.txt', 'w')
+    probability_tree = {}
+    probability_tree['pl'] = {}
+    # res = open('result.txt', 'w')
     try:
         if file_name.endswith('.gz'):
             fd = GzipFile(file_name, 'r')
@@ -28,18 +35,24 @@ def run_parser(file_name):
     else:
         files = fd.readlines()
         for line in files:
-            # parseline = urlparse(line)
-            # complete_url = parseline.geturl()
             line = line.replace('(', '')
             GRUBER_URLINTEXT_PAT = re.compile(ur'(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'".,<>?\xab\xbb\u201c\u201d\u2018\u2019]))')
             regexp = GRUBER_URLINTEXT_PAT.findall(line)
             url = url_from_regexp(regexp)
-            if url:
-                url = url.split('?')[0]
-                res.write(url)
-                res.write('\n')
-                url_list.append(url)
-        res.close()
+            if not url:
+                continue
+            parseurl = urlparse(url)
+            url = parseurl.geturl().split('?')[0]
+            # res.write(url)
+            # res.write('\n')
+            if not is_selected_tld(parseurl):
+                continue
+            before_domain = parseurl.netloc.split('.')[-2]
+            if not probability_tree['pl'].get(before_domain):
+                probability_tree['pl'][before_domain] = []
+            probability_tree['pl'][before_domain].append(url)
+        import ipdb;ipdb.set_trace()
+        # res.close()
         print 'DONE!'
         fd.close()
         return

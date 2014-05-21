@@ -14,7 +14,7 @@ git clone git@github.com:waldest/logs_parser.git
 
 Or download from [Here](https://github.com/waldest/logs_parser/zipball/master)
 
-#### Intall
+#### Install
 
 If you are in directory with setup.py, use command:
 

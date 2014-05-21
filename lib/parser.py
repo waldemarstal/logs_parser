@@ -17,6 +17,7 @@ def url_from_regexp(regexp):
 
 def run_parser(file_name):
     url_list = []
+    res = open('result.txt', 'w')
     try:
         if file_name.endswith('.gz'):
             fd = GzipFile(file_name, 'r')
@@ -34,7 +35,11 @@ def run_parser(file_name):
             regexp = GRUBER_URLINTEXT_PAT.findall(line)
             url = url_from_regexp(regexp)
             if url:
+                url = url.split('?')[0]
+                res.write(url)
+                res.write('\n')
                 url_list.append(url)
+        res.close()
         print 'DONE!'
         fd.close()
         return
